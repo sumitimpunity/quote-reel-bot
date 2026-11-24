@@ -61,13 +61,11 @@ jobs:
       - name: Render previews
         if: inputs.mode == 'preview'
         run: python make_reels.py --preview 6
-      - name: Attach previews to this run
+      - name: Put previews in the "previews" release
         if: inputs.mode == 'preview'
-        uses: actions/upload-artifact@v4
-        with:
-          name: previews
-          path: output/preview_*.mp4
-          retention-days: 7
+        run: |
+          gh release view previews >/dev/null 2>&1 || gh release create previews --title "Style previews" --notes "Sample reels for checking the look. Not posted."
+          gh release upload previews output/preview_*.mp4 --clobber
 
       # ---------- redo: drop unposted reels ----------
       - name: Remove reels that haven't been posted yet
