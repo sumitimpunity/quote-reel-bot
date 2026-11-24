@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -q requests
+      - run: pip install -q requests pillow
       - name: Download
         run: mkdir -p output && gh release download "${{ inputs.release }}" -p "${{ inputs.file }}" -D output --clobber
       - name: Post
