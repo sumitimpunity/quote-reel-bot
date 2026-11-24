@@ -167,6 +167,14 @@ def main():
         nxt = next((x for x in load_json(ROOT / "queue.json", []) if not x["posted"]), None)
         print(nxt["file"] if nxt else "")
         return
+    # Warm-up week: skip some daily slots (3 posts/day instead of 5) until the date in config.
+    w = cfg.get("warmup") or {}
+    if w.get("until") and os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        now = datetime.utcnow()
+        if now.strftime("%Y-%m-%d") < w["until"] and now.hour in w.get("skip_slots_utc_hours", []):
+            print(f"Warm-up: skipping this slot until {w['until']}.")
+            return
+
     uid, tok = load_env()
 
     if args.list_audio is not None:

@@ -1,5 +1,5 @@
 {
-  "handle": "@yourpagename",
+  "handle": "@midnightstoicc",
 
   "videos_dir": "videos",
   "quotes_file": "quotes.csv",
@@ -11,6 +11,11 @@
   "post_times": ["08:30", "12:30", "17:00", "20:30", "22:45"],
 
   "graph_version": "v22.0",
+
+  "warmup": {
+    "until": "2026-12-01",
+    "skip_slots_utc_hours": [7, 15]
+  },
 
   "audio": {
     "enabled": true,
