@@ -13,7 +13,7 @@
     "20:30",
     "22:45"
   ],
-  "graph_version": "v22.0",
+  "graph_version": "v27.0",
   "warmup": {
     "until": "2026-12-01",
     "skip_slots_utc_hours": [
