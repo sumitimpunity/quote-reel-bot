@@ -43,6 +43,10 @@ def main():
         print(f"{n} videos ready in videos/")
         sys.exit(0 if n else 1)
     vids = [(i, n) for i, n in files if n.lower().endswith(VIDEO_EXT)]
+    if len(sys.argv) > 2:  # optional limit, e.g. for previews
+        import random as _r
+        _r.shuffle(vids)
+        vids = vids[: int(sys.argv[2])]
     print(f"Found {len(files)} items, {len(vids)} videos.")
     if not vids:
         sys.exit("No videos found. Is the folder shared as 'Anyone with the link'?")

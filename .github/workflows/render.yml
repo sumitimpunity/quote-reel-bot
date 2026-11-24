@@ -1,16 +1,24 @@
 name: Render reels
 
-# Run from the Actions tab -> "Render reels" -> Run workflow.
-# Downloads the clips from Google Drive, renders quote reels, stores them in the "reels" release.
+# Actions tab -> "Render reels" -> Run workflow.
+#   preview : renders 6 sample reels you can download from the run page (queue untouched)
+#   add     : renders new reels and adds them to the posting queue
+#   redo    : throws away all NOT-yet-posted reels, then renders a fresh set (use after changing the look)
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: "preview, add or redo"
+        required: true
+        default: "preview"
+        type: choice
+        options: [preview, add, redo]
       drive_url:
         description: "Public Google Drive folder with the stock clips"
         required: true
         default: "https://drive.google.com/drive/folders/17hNerpDC3mm55t33fTNFLaSHDFHWxXpH?usp=sharing"
       count:
-        description: "How many reels to render (0 = one per clip)"
+        description: "How many reels to render in add/redo (0 = one per clip)"
         required: true
         default: "0"
 
@@ -27,27 +35,76 @@ jobs:
     timeout-minutes: 300
     env:
       GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install tools
+      - name: Install tools and fonts
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
           pip install -q -r requirements.txt gdown
+          G=https://github.com/google/fonts/raw/main/ofl
+          [ -f fonts/Inter.ttf ] || curl -sSfL -o fonts/Inter.ttf "$G/inter/Inter%5Bopsz%2Cwght%5D.ttf"
+          [ -f fonts/EBGaramond-Italic.ttf ] || curl -sSfL -o fonts/EBGaramond-Italic.ttf "$G/ebgaramond/EBGaramond-Italic%5Bwght%5D.ttf"
+          ls -la fonts
       - name: Download clips from Google Drive
-        run: python fetch_drive.py "${{ inputs.drive_url }}"
+        run: |
+          if [ "${{ inputs.mode }}" = "preview" ]; then
+            python fetch_drive.py "${{ inputs.drive_url }}" 6
+          else
+            python fetch_drive.py "${{ inputs.drive_url }}"
+          fi
+
+      # ---------- preview ----------
+      - name: Render previews
+        if: inputs.mode == 'preview'
+        run: python make_reels.py --preview 6
+      - name: Attach previews to this run
+        if: inputs.mode == 'preview'
+        uses: actions/upload-artifact@v4
+        with:
+          name: previews
+          path: output/preview_*.mp4
+          retention-days: 7
+
+      # ---------- redo: drop unposted reels ----------
+      - name: Remove reels that haven't been posted yet
+        if: inputs.mode == 'redo'
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          q = json.load(open("queue.json")) if os.path.exists("queue.json") else []
+          drop = [x["file"] for x in q if not x["posted"]]
+          json.dump([x for x in q if x["posted"]], open("queue.json", "w"), indent=2, ensure_ascii=False)
+          repo = os.environ["REPO"]
+          try:
+              assets = json.loads(subprocess.run(["gh", "api", f"repos/{repo}/releases/tags/reels", "--jq", ".assets"],
+                                                 capture_output=True, text=True, check=True).stdout)
+          except subprocess.CalledProcessError:
+              assets = []
+          for a in assets:
+              if a["name"] in drop:
+                  subprocess.run(["gh", "api", "-X", "DELETE", f"repos/{repo}/releases/assets/{a['id']}"], check=True)
+          print(f"Removed {len(drop)} unposted reels.")
+          PY
+
+      # ---------- add / redo ----------
       - name: Render reels
+        if: inputs.mode != 'preview'
         run: python make_reels.py --count ${{ inputs.count }}
       - name: Upload reels to the "reels" release
+        if: inputs.mode != 'preview'
         run: |
           gh release view reels >/dev/null 2>&1 || gh release create reels --title "Rendered reels" --notes "Finished reels waiting to be posted. Managed by the bot."
           ls output/reel_*.mp4 >/dev/null 2>&1 && gh release upload reels output/reel_*.mp4 --clobber
       - name: Save the queue
+        if: inputs.mode != 'preview'
         run: |
           git config user.name "reel-bot"
           git config user.email "reel-bot@users.noreply.github.com"
+          git pull --rebase -q
           git add queue.json
-          git commit -m "Render reels" || echo "nothing to commit"
+          git commit -m "Render reels (${{ inputs.mode }})" || echo "nothing to commit"
           git push
