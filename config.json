@@ -113,8 +113,8 @@
         255,
         120
       ],
-      "shadow_strength": 0.55,
-      "shadow_blur": 8
+      "shadow_strength": 0.75,
+      "shadow_blur": 9
     },
     "grade": {
       "brightness": 0.0,
@@ -125,5 +125,8 @@
       "grain": 7,
       "text_fade_in_at": 0.4
     }
-  }
+  },
+  "skip_clips": [
+    "Asvid109.mp4"
+  ]
 }

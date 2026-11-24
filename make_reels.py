@@ -200,7 +200,8 @@ def main():
     queue_path = ROOT / "queue.json"
     queue = load_json(queue_path, [])
 
-    clips = sorted(p for p in videos_dir.iterdir() if p.suffix.lower() in VIDEO_EXT)
+    skip = set(cfg.get("skip_clips", []))
+    clips = sorted(p for p in videos_dir.iterdir() if p.suffix.lower() in VIDEO_EXT and p.name not in skip)
     if not clips:
         sys.exit(f"No videos found in {videos_dir}. Put your stock clips there first.")
     with open(ROOT / cfg["quotes_file"], encoding="utf-8") as f:
