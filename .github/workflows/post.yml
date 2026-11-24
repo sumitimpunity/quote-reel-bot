@@ -1,6 +1,6 @@
 name: Post next reel
 
-# Posting times (IST): 08:30, 12:30, 17:00, 20:30, 22:45. GitHub's cron runs in UTC and can start
+# Posting times (IST): 08:33, 12:33, 17:03, 20:33, 22:00. GitHub's cron runs in UTC and can start
 # a few minutes late on busy days. To post less often, delete lines below.
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
     - cron: "3 7 * * *"     # 12:33 IST
     - cron: "33 11 * * *"   # 17:03 IST
     - cron: "3 15 * * *"    # 20:33 IST
-    - cron: "17 17 * * *"   # 22:47 IST
+    - cron: "30 16 * * *"   # 22:00 IST
   workflow_dispatch: {}      # "Run workflow" button = post one right now
 
 permissions:
