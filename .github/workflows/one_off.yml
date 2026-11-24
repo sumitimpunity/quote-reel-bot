@@ -1,0 +1,48 @@
+name: Post one reel now
+
+# Posts a single file from a release (e.g. a preview) right away, outside the queue.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release the file is in (previews or reels)"
+        default: "previews"
+      file:
+        description: "File name, e.g. preview_2.mp4"
+        required: true
+      quote:
+        description: "Quote text (for the caption)"
+        required: true
+      author:
+        description: "Author (for the caption)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: Download
+        run: mkdir -p output && gh release download "${{ inputs.release }}" -p "${{ inputs.file }}" -D output --clobber
+      - name: Post
+        run: python post_next.py --one-off "${{ inputs.file }}" --quote "${{ inputs.quote }}" --author "${{ inputs.author }}"
+      - name: Save log
+        if: always()
+        run: |
+          git config user.name "reel-bot"
+          git config user.email "reel-bot@users.noreply.github.com"
+          git add post_log.txt state.json 2>/dev/null || true
+          git commit -m "One-off post ${{ inputs.file }}" || echo "nothing to commit"
+          git pull --rebase -q && git push

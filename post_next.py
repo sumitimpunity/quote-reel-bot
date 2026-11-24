@@ -160,6 +160,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--list-audio", nargs="*", metavar="WORDS")
     ap.add_argument("--next-file", action="store_true", help="print the next reel's file name and exit")
+    ap.add_argument("--one-off", metavar="MP4", help="post this file once, outside the queue")
+    ap.add_argument("--quote", default="")
+    ap.add_argument("--author", default="")
     args = ap.parse_args()
 
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
@@ -181,6 +184,29 @@ def main():
         q = " ".join(args.list_audio) or None
         for o in fetch_audio(cfg, uid, tok, q):
             print(f"{o['id']:>22}  {o['title']}  -  {o['artist']}")
+        return
+
+    if args.one_off:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("mr", ROOT / "make_reels.py")
+        mr = importlib.util.module_from_spec(spec); spec.loader.exec_module(mr)
+        item = {"file": args.one_off, "author": args.author or "-",
+                "caption": mr.build_caption(cfg, args.quote, args.author)}
+        state_path = ROOT / "state.json"
+        state = load_json(state_path, {"audio_history": []})
+        audio = choose_audio(cfg, uid, tok, state["audio_history"]) if cfg["audio"]["enabled"] else None
+        try:
+            media_id = post_one(cfg, uid, tok, item, audio)
+        except Exception as e:
+            if not audio:
+                raise
+            log(f"One-off with audio failed ({e}); retrying without audio")
+            audio = None
+            media_id = post_one(cfg, uid, tok, item, None)
+        if audio:
+            state["audio_history"] = (state["audio_history"] + [audio["id"]])[-50:]
+            save_json(state_path, state)
+        log(f"POSTED one-off {args.one_off} | audio: {audio['id'] if audio else 'none'} -> media {media_id}")
         return
 
     queue_path = ROOT / "queue.json"
