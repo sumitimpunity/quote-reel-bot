@@ -1,0 +1,52 @@
+{
+  "handle": "@yourpagename",
+
+  "videos_dir": "videos",
+  "quotes_file": "quotes.csv",
+  "output_dir": "output",
+  "min_seconds": 10,
+  "max_seconds": 15,
+
+  "timezone": "Asia/Kolkata",
+  "post_times": ["08:30", "12:30", "17:00", "20:30", "22:45"],
+
+  "graph_version": "v22.0",
+
+  "audio": {
+    "enabled": true,
+    "audio_type": "music",
+    "search_queries": [],
+    "pinned_audio_ids": [],
+    "pick_from_top": 10,
+    "avoid_last": 5,
+    "audio_volume": 100,
+    "video_volume": 1,
+    "post_without_audio_if_it_fails": true
+  },
+
+  "caption_templates": [
+    "{quote}\n\n— {author}\n\nFollow {handle} for daily philosophy.",
+    "Read it twice.\n\n\"{quote}\" — {author}\n\nFollow {handle}",
+    "{author} said it best.\n\nSave this for the days you need it. Follow {handle}",
+    "Which line hits hardest today? \n\n— {author}\n\nFollow {handle} for more."
+  ],
+  "hashtags": "#philosophy #stoicism #deepquotes #quotesdaily #wisdom #mindset #selfgrowth #lifequotes #philosophyquotes #reels",
+
+  "style": {
+    "quote_font": "Lora-Italic-Variable.ttf",
+    "quote_weight": "Medium Italic",
+    "quote_size": 68,
+    "author_font": "Poppins-Light.ttf",
+    "author_size": 34,
+    "handle_size": 30,
+    "handle_top": 300,
+    "side_margin": 110,
+    "vertical_center": 0.47,
+    "text_color": [255, 255, 255, 255],
+    "author_color": [235, 225, 205, 235],
+    "handle_color": [255, 255, 255, 150],
+    "dim_brightness": -0.12,
+    "saturation": 0.85,
+    "text_fade_in_at": 0.3
+  }
+}

@@ -1,0 +1,52 @@
+name: Post next reel
+
+# Posting times (IST): 08:30, 12:30, 17:00, 20:30, 22:45. GitHub's cron runs in UTC and can start
+# a few minutes late on busy days. To post less often, delete lines below.
+on:
+  schedule:
+    - cron: "3 3 * * *"     # 08:33 IST
+    - cron: "3 7 * * *"     # 12:33 IST
+    - cron: "33 11 * * *"   # 17:03 IST
+    - cron: "3 15 * * *"    # 20:33 IST
+    - cron: "17 17 * * *"   # 22:47 IST
+  workflow_dispatch: {}      # "Run workflow" button = post one right now
+
+permissions:
+  contents: write
+
+concurrency:
+  group: queue
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: Fetch the next reel
+        id: next
+        run: |
+          FILE=$(python post_next.py --next-file)
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          if [ -z "$FILE" ]; then echo "::warning::Queue is empty - run 'Render reels'."; exit 0; fi
+          mkdir -p output && gh release download reels -p "$FILE" -D output --clobber
+      - name: Post to Instagram
+        if: steps.next.outputs.file != ''
+        run: python post_next.py
+      - name: Save progress
+        if: always()
+        run: |
+          git config user.name "reel-bot"
+          git config user.email "reel-bot@users.noreply.github.com"
+          git add queue.json state.json post_log.txt 2>/dev/null || true
+          git commit -m "Posted ${{ steps.next.outputs.file }}" || echo "nothing to commit"
+          git pull --rebase -q && git push

@@ -1,0 +1,5 @@
+videos/
+output/
+.env
+__pycache__/
+*.tmp

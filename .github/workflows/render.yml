@@ -1,0 +1,53 @@
+name: Render reels
+
+# Run from the Actions tab -> "Render reels" -> Run workflow.
+# Downloads the clips from Google Drive, renders quote reels, stores them in the "reels" release.
+on:
+  workflow_dispatch:
+    inputs:
+      drive_url:
+        description: "Public Google Drive folder with the stock clips"
+        required: true
+        default: "https://drive.google.com/drive/folders/17hNerpDC3mm55t33fTNFLaSHDFHWxXpH?usp=sharing"
+      count:
+        description: "How many reels to render (0 = one per clip)"
+        required: true
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: queue
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q -r requirements.txt gdown
+      - name: Download clips from Google Drive
+        run: python fetch_drive.py "${{ inputs.drive_url }}"
+      - name: Render reels
+        run: python make_reels.py --count ${{ inputs.count }}
+      - name: Upload reels to the "reels" release
+        run: |
+          gh release view reels >/dev/null 2>&1 || gh release create reels --title "Rendered reels" --notes "Finished reels waiting to be posted. Managed by the bot."
+          ls output/reel_*.mp4 >/dev/null 2>&1 && gh release upload reels output/reel_*.mp4 --clobber
+      - name: Save the queue
+        run: |
+          git config user.name "reel-bot"
+          git config user.email "reel-bot@users.noreply.github.com"
+          git add queue.json
+          git commit -m "Render reels" || echo "nothing to commit"
+          git push
