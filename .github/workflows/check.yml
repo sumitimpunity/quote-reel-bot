@@ -31,4 +31,12 @@ jobs:
           r.raise_for_status()
           PY
       - name: Trending sounds available
-        run: python post_next.py --list-audio | head -15
+        run: |
+          python - <<'PY'
+          import os, json, requests
+          v = json.load(open("config.json"))["graph_version"]
+          for t in ("music", "original_sound"):
+              r = requests.get(f"https://graph.facebook.com/{v}/ig_audio",
+                               params={"audio_type": t, "user_id": os.environ["IG_USER_ID"], "access_token": os.environ["IG_ACCESS_TOKEN"]}, timeout=60)
+              print(t, r.status_code, json.dumps(r.json())[:1500])
+          PY
