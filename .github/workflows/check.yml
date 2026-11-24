@@ -1,0 +1,34 @@
+name: Check Instagram connection
+
+# Actions tab -> "Check Instagram connection" -> Run workflow.
+# Posts nothing: confirms the token works and lists sounds the bot can use right now.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests
+      - name: Account
+        run: |
+          python - <<'PY'
+          import os, json, requests
+          v = json.load(open("config.json"))["graph_version"]
+          r = requests.get(f"https://graph.facebook.com/{v}/{os.environ['IG_USER_ID']}",
+                           params={"fields": "username,followers_count,media_count", "access_token": os.environ["IG_ACCESS_TOKEN"]}, timeout=60)
+          print(r.status_code, r.json())
+          d = requests.get(f"https://graph.facebook.com/{v}/debug_token",
+                           params={"input_token": os.environ["IG_ACCESS_TOKEN"], "access_token": os.environ["IG_ACCESS_TOKEN"]}, timeout=60).json().get("data", {})
+          print("token type:", d.get("type"), "| expires_at:", d.get("expires_at"), "(0 = never) | valid:", d.get("is_valid"))
+          r.raise_for_status()
+          PY
+      - name: Trending sounds available
+        run: python post_next.py --list-audio | head -15
