@@ -39,7 +39,7 @@ jobs:
           for q in qs:
               p = {"audio_type": "music", "user_id": os.environ["IG_USER_ID"], "access_token": os.environ["IG_ACCESS_TOKEN"]}
               if q: p["search_query"] = q
-              r = requests.get(f"https://graph.facebook.com/{v}/ig_audio", params=p, timeout=60)
-              items = r.json().get("audio", [])
-              X
+              items = requests.get(f"https://graph.facebook.com/{v}/ig_audio", params=p, timeout=60).json().get("audio", [])
+              for a in items[:10]:
+                  print("SOUND", a.get("audio_id"), "=", a.get("title"), "-", a.get("display_artist", ""))
           PY
