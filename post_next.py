@@ -75,7 +75,7 @@ def fetch_audio(cfg, uid, tok, query=None):
     if query:
         params["search_query"] = query
     data = api("GET", f"{GRAPH}/{cfg['graph_version']}/ig_audio", params=params)
-    items = data.get("data", [])
+    items = data.get("audio") or data.get("data") or []
     out = []
     for it in items:
         aid = it.get("audio_id") or it.get("id")

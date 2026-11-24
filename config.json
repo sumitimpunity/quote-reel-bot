@@ -24,7 +24,16 @@
   "audio": {
     "enabled": true,
     "audio_type": "music",
-    "search_queries": [],
+    "search_queries": [
+      "interstellar",
+      "piano slowed",
+      "sad piano",
+      "ambient",
+      "experience ludovico einaudi",
+      "lofi rain",
+      "cinematic",
+      "aesthetic slowed"
+    ],
     "pinned_audio_ids": [],
     "pick_from_top": 10,
     "avoid_last": 5,

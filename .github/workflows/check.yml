@@ -35,8 +35,11 @@ jobs:
           python - <<'PY'
           import os, json, requests
           v = json.load(open("config.json"))["graph_version"]
-          for t in ("music", "original_sound"):
-              r = requests.get(f"https://graph.facebook.com/{v}/ig_audio",
-                               params={"audio_type": t, "user_id": os.environ["IG_USER_ID"], "access_token": os.environ["IG_ACCESS_TOKEN"]}, timeout=60)
-              print(t, r.status_code, json.dumps(r.json())[:1500])
+          qs = json.load(open("config.json"))["audio"]["search_queries"] or [None]
+          for q in qs:
+              p = {"audio_type": "music", "user_id": os.environ["IG_USER_ID"], "access_token": os.environ["IG_ACCESS_TOKEN"]}
+              if q: p["search_query"] = q
+              r = requests.get(f"https://graph.facebook.com/{v}/ig_audio", params=p, timeout=60)
+              items = r.json().get("audio", [])
+              print(f"SOUNDS [{q or 'trending'}]:", " | ".join(f"{a.get('title')} - {a.get('display_artist','')}" for a in items[:8]))
           PY
