@@ -1,3 +1,4 @@
 2026-11-24 13:27:58  POSTED one-off preview_2.mp4 | audio: 693181796214448 -> media 17970569493195095
 2026-11-24 13:36:32  POSTED one-off preview_1.mp4 | audio: 878115853494599 -> media 18505666771103834
 2026-11-24 16:49:33  POSTED reel_0001.mp4 | Seneca | audio: (pinned)  (534836465627737) -> media 18361435615170610. 145 left in queue.
+2026-11-24 23:48:37  POSTED reel_0002.mp4 | Socrates | audio: (pinned)  (2477944699150252) -> media 18080411522439693. 144 left in queue.
