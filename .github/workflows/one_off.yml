@@ -37,7 +37,7 @@ jobs:
       - name: Download
         run: mkdir -p output && gh release download "${{ inputs.release }}" -p "${{ inputs.file }}" -D output --clobber
       - name: Post
-        run: python post_next.py --one-off "${{ inputs.file }}" --quote "${{ inputs.quote }}" --author "${{ inputs.author }}"
+        run: python post_next.py --one-off "${{ inputs.file }}" --quote "${{ inputs.quote }}" --author "${{ inputs.author }}" --release "${{ inputs.release }}"
       - name: Save log
         if: always()
         run: |

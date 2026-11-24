@@ -102,14 +102,33 @@ def choose_audio(cfg, uid, tok, history):
 
 # ---------- publishing ----------
 
-def create_container(cfg, uid, tok, item, audio):
+def public_link(release, filename):
+    """Public download link for a release file in this (public) GitHub repo.
+    Meta only attaches audio to reels created from a video_url, so we hand it this link.
+    GitHub redirects to a short-lived direct link; we resolve it so Meta gets the file directly."""
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        raise RuntimeError("not running on GitHub Actions")
+    url = f"https://github.com/{repo}/releases/download/{release}/{filename}"
+    r = requests.head(url, allow_redirects=False, timeout=60)
+    if r.status_code in (301, 302, 303, 307, 308) and r.headers.get("Location"):
+        return r.headers["Location"]
+    if r.status_code == 200:
+        return url
+    raise RuntimeError(f"release file is not publicly reachable ({r.status_code}) - is the repo public?")
+
+
+def create_container(cfg, uid, tok, item, audio, video_url=None):
     params = {
         "media_type": "REELS",
-        "upload_type": "resumable",
         "caption": item["caption"],
         "share_to_feed": "true",
         "access_token": tok,
     }
+    if video_url:
+        params["video_url"] = video_url
+    else:
+        params["upload_type"] = "resumable"
     if audio:
         params["audio_configuration"] = json.dumps({
             "audio_id": audio["id"],
@@ -147,10 +166,17 @@ def publish(cfg, uid, tok, container_id):
                data={"creation_id": container_id, "access_token": tok})
 
 
-def post_one(cfg, uid, tok, item, audio):
-    c = create_container(cfg, uid, tok, item, audio)
+def post_one(cfg, uid, tok, item, audio, release="reels"):
+    url = None
+    if audio:
+        try:
+            url = public_link(release, item["file"])
+        except Exception as e:
+            log(f"No public link ({e}); uploading directly - audio may not attach")
+    c = create_container(cfg, uid, tok, item, audio, url)
     cid = c["id"]
-    upload_video(cfg, tok, cid, ROOT / cfg["output_dir"] / item["file"], c.get("uri"))
+    if not url:
+        upload_video(cfg, tok, cid, ROOT / cfg["output_dir"] / item["file"], c.get("uri"))
     wait_until_ready(cfg, tok, cid)
     return publish(cfg, uid, tok, cid)["id"]
 
@@ -163,6 +189,7 @@ def main():
     ap.add_argument("--one-off", metavar="MP4", help="post this file once, outside the queue")
     ap.add_argument("--quote", default="")
     ap.add_argument("--author", default="")
+    ap.add_argument("--release", default="reels")
     args = ap.parse_args()
 
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
@@ -196,13 +223,13 @@ def main():
         state = load_json(state_path, {"audio_history": []})
         audio = choose_audio(cfg, uid, tok, state["audio_history"]) if cfg["audio"]["enabled"] else None
         try:
-            media_id = post_one(cfg, uid, tok, item, audio)
+            media_id = post_one(cfg, uid, tok, item, audio, args.release)
         except Exception as e:
             if not audio:
                 raise
             log(f"One-off with audio failed ({e}); retrying without audio")
             audio = None
-            media_id = post_one(cfg, uid, tok, item, None)
+            media_id = post_one(cfg, uid, tok, item, None, args.release)
         if audio:
             state["audio_history"] = (state["audio_history"] + [audio["id"]])[-50:]
             save_json(state_path, state)
