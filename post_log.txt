@@ -14,3 +14,4 @@
 2026-11-26 23:33:18  Post with audio failed (400 Cannot call API for app 1753668559461894 on behalf of user 122095621527566181); retrying without audio
 2026-11-27 00:43:46  Post with audio failed (400 Cannot call API for app 1753668559461894 on behalf of user 122095621527566181); retrying without audio
 2026-11-27 11:52:43  Post with audio failed (400 Cannot call API for app 1753668559461894 on behalf of user 122095621527566181); retrying without audio
+2026-11-27 17:24:36  Post with audio failed (400 Cannot call API for app 1753668559461894 on behalf of user 122095621527566181); retrying without audio
